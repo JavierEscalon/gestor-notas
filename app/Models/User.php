@@ -51,4 +51,13 @@ class User extends Authenticatable
     {
         return $this->hasOne(Docente::class);
     }
+
+    /**
+     * un usuario (si es estudiante) "tiene un" perfil de alumno
+     */
+    public function alumno()
+    {
+        return $this->hasOne(Alumno::class);
+    }
+
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\PeriodoEscolarController;
 use App\Http\Controllers\CursoController;
 use App\Http\Controllers\CalificacionController;
 use App\Http\Controllers\Docente\DashboardController as DocenteDashboardController;
+use App\Http\Controllers\Estudiante\DashboardController as EstudianteDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +99,13 @@ Route::middleware(['auth'])->prefix('docente')->name('docente.')->group(function
 
 });
 
+
+// --- RUTAS DEL ESTUDIANTE ---
+Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(function () {
+
+    // la ruta del dashboard del alumno
+    Route::get('/dashboard', [App\Http\Controllers\Estudiante\DashboardController::class, 'index'])->name('dashboard');
+});
 
 
 });

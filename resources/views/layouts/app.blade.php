@@ -20,9 +20,13 @@
                     <a class="navbar-brand" href="{{ route('dashboard') }}">
                         GESTOR DE NOTAS CESJB (Admin)
                     </a>
-                @else
+                @elseif(auth()->user()->role == 'docente')
                     <a class="navbar-brand" href="{{ route('docente.dashboard') }}">
                         GESTOR DE NOTAS CESJB (Docente)
+                    </a>
+                @elseif(auth()->user()->role == 'estudiante')
+                    <a class="navbar-brand" href="{{ route('estudiante.dashboard') }}">
+                        GESTOR DE NOTAS CESJB (Estudiante)
                     </a>
                 @endif
                 
