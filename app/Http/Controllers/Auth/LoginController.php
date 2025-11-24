@@ -51,7 +51,9 @@ class LoginController extends Controller
                 case 'docente':
                     return redirect()->intended(route('docente.dashboard'));
                 case 'estudiante':
-                return redirect()->intended(route('estudiante.dashboard'));
+                    return redirect()->intended(route('estudiante.dashboard'));
+                case 'padre':
+                    return redirect()->intended(route('padre.dashboard'));
                 default:
                     // si no tiene rol, lo mandamos a la raiz
                     return redirect()->intended('/'); 

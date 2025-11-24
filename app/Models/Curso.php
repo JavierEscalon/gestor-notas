@@ -61,5 +61,52 @@ class Curso extends Model
         // la tabla pivote es inscripcions
         return $this->belongsToMany(Alumno::class, 'inscripcions');
     }
+
+    /**
+     * relacin: un curso tiene muchas calificaciones registradas
+     */
+    public function calificaciones()
+    {
+        return $this->hasMany(Calificacion::class);
+    }
+
+    /**
+     * funcion personalizada para calcular el promedio de un alumno en este curso
+     * retorna el puntaje acumulado basado en porcentajes
+     */
+    public function calcularPromedio($alumno_id)
+    {
+        // 1 buscamos las notas de este alumno en este curso
+        $notas = $this->calificaciones()
+                      ->where('alumno_id', $alumno_id)
+                      ->get();
+
+        $promedioAcumulado = 0;
+
+        // 2 recorremos cada nota y aplicamos la formula
+        foreach ($notas as $nota) {
+            // tomamos el porcentaje directamente de la nota (tabla calificacions)
+            $porcentaje = $nota->percentage; 
+
+            // calculamos los puntos ganados: nota * (porcentaje / 100)
+            // Ej: 10 * 0.35 = 3.5 puntos
+            if ($porcentaje > 0) {
+                $puntos = $nota->score * ($porcentaje / 100);
+                $promedioAcumulado += $puntos;
+            }
+        }
+
+        return number_format($promedioAcumulado, 2);
+    }
+
+
+    /**
+     * un curso tiene muchas asistencias registradas
+     */
+    public function asistencias()
+    {
+        return $this->hasMany(Asistencia::class);
+    }
+    
     
 }

@@ -24,49 +24,64 @@
             </p>
 
             <div class="table-responsive">
-                <table class="table table-sm table-bordered">
+                <div class="table-responsive">
+                <table class="table table-sm table-bordered table-hover">
                     <thead class="table-light">
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Tipo</th>
-                            <th class="text-center">Nota</th>
+                        <tr class="text-center align-middle">
+                            <th class="text-start">Actividad</th>
+                            <th>Calificación</th>
+                            <th>Porcentaje</th>
+                            <th>Puntos Ganados</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{-- Buscamos las notas especificas de este curso --}}
                         @php 
                             $misNotas = $calificaciones[$curso->id] ?? collect(); 
-                            $promedio = 0;
-                            $contador = 0;
+                            $promedioAcumulado = 0;
                         @endphp
 
                         @forelse ($misNotas as $nota)
-                            <tr>
-                                <td>{{ $nota->activity_name }}</td>
-                                <td>{{ $nota->tipoActividad->name }} ({{ $nota->tipoActividad->default_percentage }}%)</td>
-                                <td class="text-center fw-bold {{ $nota->score < 6 ? 'text-danger' : 'text-success' }}">
-                                    {{ $nota->score }}
+                            @php
+                                $porcentaje = $nota->percentage;
+                                // Calculamos los puntos ganados
+                                $puntos = ($nota->score * $porcentaje) / 100;
+                                $promedioAcumulado += $puntos;
+                            @endphp
+                            <tr class="text-center align-middle">
+                                <td class="text-start">
+                                    {{ $nota->activity_name }} <br>
+                                    <small class="text-muted">{{ $nota->tipoActividad->name }}</small>
+                                </td>
+                                <td class="fw-bold {{ $nota->score < 6 ? 'text-danger' : 'text-dark' }}">
+                                    {{ number_format($nota->score, 2) }}
+                                </td>
+                                <td>{{ number_format($porcentaje, 0) }}%</td>
+                                <td class="bg-light fw-bold text-primary">
+                                    {{ number_format($puntos, 2) }}
                                 </td>
                             </tr>
-                            @php 
-                                $promedio += $nota->score; 
-                                $contador++; 
-                            @endphp
                         @empty
                             <tr>
-                                <td colspan="3" class="text-center text-muted">Aún no hay notas registradas en esta materia.</td>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    Aún no hay notas registradas en esta materia.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
-                    @if($contador > 0)
-                    <tfoot class="table-light">
+                    
+                    <tfoot class="table-light border-top-2">
                         <tr>
-                            <td colspan="2" class="text-end"><strong>Promedio Simple (Referencia):</strong></td>
-                            <td class="text-center"><strong>{{ number_format($promedio / $contador, 2) }}</strong></td>
+                            <td colspan="3" class="text-end align-middle">
+                                <h6 class="mb-0">Nota Final Acumulada:</h6>
+                            </td>
+                            <td class="text-center align-middle bg-primary text-white">
+                                <h5 class="mb-0">{{ number_format($promedioAcumulado, 2) }}</h5>
+                            </td>
                         </tr>
                     </tfoot>
-                    @endif
                 </table>
+            </div>
             </div>
         </div>
     </div>

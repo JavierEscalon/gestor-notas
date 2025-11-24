@@ -28,6 +28,10 @@
                     <a class="navbar-brand" href="{{ route('estudiante.dashboard') }}">
                         GESTOR DE NOTAS CESJB (Estudiante)
                     </a>
+                @elseif(auth()->user()->role == 'padre')
+                    <a class="navbar-brand" href="{{ route('padre.dashboard') }}">
+                        GESTOR DE NOTAS CESJB (Padre de Familia)
+                    </a>
                 @endif
                 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="toggle navigation">

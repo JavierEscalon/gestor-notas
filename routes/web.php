@@ -78,7 +78,8 @@ route::middleware(['auth'])->group(function () {
     Route::post('/cursos/{curso}/inscribir', [CursoController::class, 'inscribirAlumnos'])->name('cursos.inscribir');
     Route::delete('/cursos/{curso}/quitar/{alumno}', [CursoController::class, 'quitarAlumno'])->name('cursos.quitar');
 
-// / ruta para la gestion de docente
+
+// --- RUTAS DEL DOCENTE ---
 Route::middleware(['auth'])->prefix('docente')->name('docente.')->group(function () {
 
     // la ruta del dashboard del docente
@@ -97,6 +98,9 @@ Route::middleware(['auth'])->prefix('docente')->name('docente.')->group(function
     Route::get('/cursos/{curso}/calificaciones/{activity_name}/edit', [CalificacionController::class, 'editActivity'])->name('calificaciones.edit');
     Route::put('/cursos/{curso}/calificaciones/{activity_name}', [CalificacionController::class, 'updateActivity'])->name('calificaciones.update');
 
+    // rutas para control de asistencia
+    Route::get('/cursos/{curso}/asistencia', [App\Http\Controllers\AsistenciaController::class, 'index'])->name('cursos.asistencia');
+    Route::post('/cursos/{curso}/asistencia', [App\Http\Controllers\AsistenciaController::class, 'store'])->name('cursos.asistencia.store');
 });
 
 
@@ -106,6 +110,13 @@ Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(fu
     // la ruta del dashboard del alumno
     Route::get('/dashboard', [App\Http\Controllers\Estudiante\DashboardController::class, 'index'])->name('dashboard');
 });
+
+
+// --- RUTAS DEL PADRE DE FAMILIA ---
+Route::middleware(['auth'])->prefix('padre')->name('padre.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Padre\DashboardController::class, 'index'])->name('dashboard');
+});
+
 
 
 });

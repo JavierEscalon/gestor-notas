@@ -3,117 +3,126 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Curso; // necesitamos el curso
-use App\Models\TipoActividad; // para el <select> de actividades
-use App\Models\Calificacion;
+use App\Models\Curso; // Necesitamos el modelo Curso
+use App\Models\TipoActividad; // Para obtener la lista de tipos
+use App\Models\Calificacion; // Para guardar y leer las notas
 
 class CalificacionController extends Controller
 {
     /**
-     * Muestra el formulario para registrar calificaciones de un curso.
+     * Muestra el formulario para registrar y ver calificaciones de un curso.
+     * (GET /docente/cursos/{curso}/calificaciones)
      */
     public function show(Curso $curso)
     {
-        // Cargamos el curso con los alumnos ya inscritos
+        // 1 Cargamos el curso junto con los alumnos ya inscritos
         $curso->load('alumnos');
 
-        // Buscamos los tipos de actividad (ej. Tarea, Examen)
+        // 2 Buscamos todos los tipos de actividad disponibles (ej. Tarea, Examen)
         $tiposActividad = TipoActividad::all();
 
-        // (nuevo) buscamos las calificaciones que ya existen
-        //    para este curso, agrupadas por 'activity_name'
+        // 3 Buscamos las actividades que ya han sido registradas para este curso.
+        // Agrupamos por 'activity_name' para mostrarlas en la tabla resumen.
         $actividadesRegistradas = Calificacion::where('curso_id', $curso->id)
-                                    ->with('tipoActividad') // (traemos el nombre del tipo)
-                                    ->select('activity_name', 'tipo_actividad_id') // (solo necesitamos estos campos)
-                                    ->distinct() // (para que "Examen 1" solo aparezca una vez)
+                                    ->with('tipoActividad') // Traemos la relación para mostrar el nombre del tipo
+                                    ->select('activity_name', 'tipo_actividad_id', 'percentage') // Seleccionamos nombre, tipo y porcentaje
+                                    ->distinct() // Queremos solo una fila por actividad (no una por alumno)
                                     ->get();
 
-        // Pasamos todos los datos a la vista
+        // 4 Pasamos todos los datos a la vista principal
         return view('docente.calificaciones', [
             'curso' => $curso,
             'tiposActividad' => $tiposActividad,
-            'actividadesRegistradas' => $actividadesRegistradas, // (pasamos las actividades)
+            'actividadesRegistradas' => $actividadesRegistradas,
         ]);
     }
 
     /**
-     * guarda las nuevas calificaciones en la db
+     * Guarda una NUEVA actividad y sus calificaciones en la base de datos.
+     * (POST /docente/cursos/{curso}/calificaciones)
      */
     public function store(Request $request, Curso $curso)
     {
-        // validamos los datos del formulario
+        // 1 Validamos los datos del formulario
         $request->validate([
             'activity_name' => 'required|string|max:255',
             'tipo_actividad_id' => 'required|exists:tipo_actividads,id',
-            'scores' => 'required|array', // el campo 'scores' debe ser una lista
-            'scores.*' => 'required|numeric|min:0|max:10', // cada nota en la lista debe ser un numero entre 0 y 10
+            'percentage' => 'required|numeric|min:1|max:100', // Validamos el porcentaje manual (1-100)
+            'scores' => 'required|array', // Debe ser una lista de notas
+            'scores.*' => 'required|numeric|min:0|max:10', // Cada nota debe ser 0-10
         ]);
 
-        // obtenemos el periodo_id del curso
+        // --- VALIDACIÓN DE LÓGICA DE NEGOCIO (SUMA 100%) ---
+        
+        // Obtenemos el ID del periodo del curso
         $periodoId = $curso->periodo_id;
 
-        // el paso clave, iteramos (recorremos) la lista de notas
-        // el 'name="scores[{{ $alumno->id }}]"' que pusimos en la vista
-        // nos envia un array asi: [ 'id_del_alumno_1' => 'nota_1', 'id_del_alumno_2' => 'nota_2' ]
+        // A Calculamos cuánto porcentaje ya está ocupado en este curso/periodo
+        // (Sumamos el porcentaje de cada actividad única ya registrada)
+        $sumaActual = Calificacion::where('curso_id', $curso->id)
+                                  ->where('periodo_id', $periodoId)
+                                  ->select('activity_name', 'percentage')
+                                  ->distinct()
+                                  ->get()
+                                  ->sum('percentage');
 
+        // B Calculamos cuánto sería la nueva suma si agregamos esta actividad
+        $nuevoPorcentaje = $request->percentage;
+        $total = $sumaActual + $nuevoPorcentaje;
+
+        // C Si se pasa de 100%, devolvemos un error y detenemos el guardado
+        // (Usamos 100.01 para evitar errores de redondeo flotante)
+        if ($total > 100.01) {
+            return back()->withErrors([
+                'percentage' => "Error: La suma total superaría el 100%. Actualmente tienes $sumaActual%. Solo puedes agregar una actividad de hasta " . (100 - $sumaActual) . "%."
+            ])->withInput();
+        }
+        // ----------------------------------------------------
+
+        // 2 Si pasó la validación, guardamos las notas
+        //    Iteramos sobre el array de notas: [alumno_id => nota]
         foreach ($request->scores as $alumnoId => $score) {
-
-            // creamos un nuevo registro en la tabla 'calificacions'
-            // por cada alumno en la lista
             Calificacion::create([
                 'alumno_id' => $alumnoId,
                 'curso_id' => $curso->id,
                 'periodo_id' => $periodoId,
                 'tipo_actividad_id' => $request->tipo_actividad_id,
                 'activity_name' => $request->activity_name,
+                'percentage' => $request->percentage, // Guardamos el porcentaje asignado
                 'score' => $score,
             ]);
         }
 
-        // redirigimos al dashboard del docente con un mensaje de exito
-        return redirect()->route('docente.dashboard')->with('success', '¡Calificaciones guardadas exitosamente!');
-    }
-    
-
-    /**
-     * elimina todas las calificaciones asociadas con un nombre de actividad
-     * para un curso especifico.
-     */
-    public function destroyActivity(Curso $curso, $activity_name)
-    {
-        // buscamos todas las calificaciones que coincidan
-        // con el curso y el nombre de la actividad
-        Calificacion::where('curso_id', $curso->id)
-                    ->where('activity_name', $activity_name)
-                    ->delete(); // (las eliminamos)
-
-        // redirigimos de vuelta a la pagina anterior
-        // con un mensaje de exito
-        return back()->with('success', '¡Actividad y sus notas eliminadas exitosamente!');
+        // 3 Redirigimos con mensaje de éxito
+        return redirect()->route('docente.cursos.calificaciones', $curso->id)
+                         ->with('success', '¡Calificaciones guardadas! (Acumulado Total: ' . $total . '%)');
     }
 
     /**
-     * muestra el formulario para editar las notas de una actividad.
+     * Muestra el formulario para EDITAR las notas de una actividad existente.
+     * (GET /docente/cursos/{curso}/calificaciones/{activity_name}/edit)
      */
     public function editActivity(Curso $curso, $activity_name)
     {
-        // cargamos el curso
+        // 1 Cargamos el curso y sus alumnos
         $curso->load('alumnos');
 
-        // buscamos el tipo de actividad para saber cual es
-        $tipoActividad = Calificacion::where('curso_id', $curso->id)
+        // 2 Buscamos el tipo de actividad de este grupo de notas para mostrarlo
+        // (Tomamos el primero que encontremos, ya que todos tienen el mismo tipo)
+        $registroEjemplo = Calificacion::where('curso_id', $curso->id)
                                     ->where('activity_name', $activity_name)
-                                    ->first()
-                                    ->tipoActividad; // (usamos la relacion)
+                                    ->first();
+                                    
+        $tipoActividad = $registroEjemplo->tipoActividad; 
 
-        // buscamos todas las calificaciones de esta actividad
-        // y las convertimos en un array facil de usar
-        // (ej. [ 'id_alumno' => 'nota' ])
+        // 3 Buscamos TODAS las calificaciones de esta actividad
+        //    y las convertimos en un array simple: [ 'id_alumno' => 'nota' ]
+        //    Esto facilita rellenar los inputs en la vista.
         $calificaciones = Calificacion::where('curso_id', $curso->id)
                                     ->where('activity_name', $activity_name)
                                     ->pluck('score', 'alumno_id');
 
-        // pasamos todos los datos a la nueva vista de edicion
+        // 4 Pasamos todos los datos a la vista de edición
         return view('docente.calificaciones_edit', [
             'curso' => $curso,
             'activity_name' => $activity_name,
@@ -123,45 +132,44 @@ class CalificacionController extends Controller
     }
 
     /**
-     * actualiza las calificaciones de una actividad existente.
+     * Actualiza las calificaciones de una actividad existente.
+     * (PUT /docente/cursos/{curso}/calificaciones/{activity_name})
      */
     public function updateActivity(Request $request, Curso $curso, $activity_name)
     {
-        // 1. validamos los datos (solo la lista de scores)
+        // 1 Validamos solo las notas (no permitimos cambiar nombre ni porcentaje aquí por simplicidad)
         $request->validate([
             'scores' => 'required|array',
             'scores.*' => 'required|numeric|min:0|max:10',
         ]);
 
-        // 2. iteramos (recorremos) la lista de notas que nos llego
+        // 2 Iteramos sobre las nuevas notas recibidas
         foreach ($request->scores as $alumnoId => $score) {
             
-            // 3. usamos 'updateorcreate' para actualizar la nota
-            //    esto es muy eficiente:
-            //    - busca una calificacion que coincida con
-            //      curso, alumno y nombre de actividad
-            //    - si la encuentra, la actualiza con el nuevo 'score'
-            //    - si no la encuentra, la crea (aunque no deberia pasar)
-            Calificacion::updateOrCreate(
-                [
-                    'curso_id' => $curso->id,
-                    'alumno_id' => $alumnoId,
-                    'activity_name' => $activity_name,
-                ],
-                [
-                    'score' => $score,
-                    
-                    // (nos aseguramos de que los otros datos esten ahi)
-                    'tipo_actividad_id' => $request->tipo_actividad_id, 
-                    'periodo_id' => $curso->periodo_id,
-                ]
-            );
+            // 3 Buscamos la nota existente y actualizamos su valor ('score')
+            Calificacion::where('curso_id', $curso->id)
+                        ->where('activity_name', $activity_name)
+                        ->where('alumno_id', $alumnoId)
+                        ->update(['score' => $score]);
         }
 
-        // 4. redirigimos de vuelta al "hub" de calificaciones
-        //    (la pagina 'show' del curso)
+        // 4 Redirigimos con mensaje de éxito
         return redirect()->route('docente.cursos.calificaciones', $curso->id)
                          ->with('success', '¡Calificaciones actualizadas exitosamente!');
     }
 
+    /**
+     * Elimina todas las calificaciones asociadas a una actividad.
+     * (DELETE /docente/cursos/{curso}/calificaciones/{activity_name})
+     */
+    public function destroyActivity(Curso $curso, $activity_name)
+    {
+        // 1 Borramos todos los registros que coincidan con el curso y el nombre de la actividad
+        Calificacion::where('curso_id', $curso->id)
+                    ->where('activity_name', $activity_name)
+                    ->delete();
+
+        // 2 Redirigimos con mensaje de éxito
+        return back()->with('success', '¡Actividad y sus notas eliminadas exitosamente!');
+    }
 }

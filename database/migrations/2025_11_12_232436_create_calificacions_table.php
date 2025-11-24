@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('periodo_id')->constrained('periodos_escolar'); // (FK)
             
             $table->decimal('score', 5, 2); // ej. 8.50
+            $table->decimal('percentage', 5, 2); //ej. 20.00
             $table->string('activity_name')->nullable();
             $table->timestamps();
         });

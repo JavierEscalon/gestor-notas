@@ -56,4 +56,10 @@ class Alumno extends Model
         return $this->belongsToMany(Curso::class, 'inscripcions');
     }
 
+    /**
+     * un alumno tiene padres/tutores.
+     */
+    public function padres() {
+        return $this->belongsToMany(Padre::class, 'alumno_padre');
+    }
 }

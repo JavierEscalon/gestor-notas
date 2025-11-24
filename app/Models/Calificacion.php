@@ -19,6 +19,7 @@ class Calificacion extends Model
         'periodo_id',
         'score',
         'activity_name',
+        'percentage',
     ];
 
     public function tipoActividad()

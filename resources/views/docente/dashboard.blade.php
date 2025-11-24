@@ -25,9 +25,8 @@
                     <td>{{ $curso->seccion->name }}</td>
                     <td>{{ $curso->periodo->name }}</td>
                     <td>
-                        <a href="{{ route('docente.cursos.calificaciones', $curso->id) }}" class="btn btn-sm btn-primary">
-                            Registrar Calificaciones
-                        </a>
+                        <a href="{{ route('docente.cursos.calificaciones', $curso->id) }}" class="btn btn-sm btn-primary">Registrar Calificaciones</a>
+                        <a href="{{ route('docente.cursos.asistencia', $curso->id) }}" class="btn btn-sm btn-success">Asistencia</a>
                     </td>
                 </tr>
             @empty
