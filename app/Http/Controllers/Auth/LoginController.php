@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Bitacora;
 
 class LoginController extends Controller
 {
@@ -41,11 +42,15 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate(); // regeneramos la sesion
 
-            // logica de redireccion al dashboard segun rol
+            // log de bitacora
+            Bitacora::registrar('LOGIN', 'El usuario ' . Auth::user()->email . ' inició sesión.');
 
+            // logica de redireccion al dashboard segun rol
             $role = Auth::user()->role;
 
             switch ($role) {
+                case 'sysadmin':
+                    return redirect()->route('sysadmin.dashboard');
                 case 'admin':
                     return redirect()->intended(route('dashboard'));
                 case 'docente':

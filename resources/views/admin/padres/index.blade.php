@@ -29,7 +29,7 @@
                         @endforeach
                     </td>
                     <td class="d-flex">
-                        <a href="{{ route('admin.padres.hijos', $padre->id) }}" class="btn btn-sm btn-info me-1" title="Asignar Hijos">👨‍👧‍👦 Hijos</a>
+                        <a href="{{ route('admin.padres.hijos', $padre->id) }}" class="btn btn-sm btn-info me-1" title="Asignar Hijos">Hijos</a>
                         <a href="{{ route('admin.padres.edit', $padre->id) }}" class="btn btn-sm btn-warning me-1">Editar</a>
                         <form action="{{ route('admin.padres.destroy', $padre->id) }}" method="post" onsubmit="return confirm('¿Eliminar este padre?');">
                             @csrf @method('DELETE')

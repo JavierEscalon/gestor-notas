@@ -14,7 +14,16 @@ class UserSeeder extends Seeder
      * @return void
      */
     public function run()
-    {
+    {   
+
+        // 0 usuario SysAdmin
+        User::create([
+            'name' => 'Administrador del Sistema',
+            'email' => 'sysadmin@gestornotas.com',
+            'password' => Hash::make('password'),
+            'role' => 'sysadmin', // Nuevo rol
+        ]);
+
         // creamos nuestro primer usuario administrador
         User::create([
             'name' => 'administrador',

@@ -12,6 +12,7 @@ use App\Http\Controllers\CalificacionController;
 use App\Http\Controllers\Docente\DashboardController as DocenteDashboardController;
 use App\Http\Controllers\Estudiante\DashboardController as EstudianteDashboardController;
 use App\Http\Controllers\Admin\BoletaController;
+use App\Http\Controllers\SysAdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -132,3 +133,24 @@ Route::middleware(['auth', 'role:estudiante'])->prefix('estudiante')->name('estu
 Route::middleware(['auth', 'role:padre'])->prefix('padre')->name('padre.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Padre\DashboardController::class, 'index'])->name('dashboard');
 });
+
+// ============================================================
+// GRUPO: SYSADMIN (ADMINISTRADOR DEL SISTEMA)
+// ============================================================
+Route::middleware(['auth', 'role:sysadmin'])->prefix('sysadmin')->name('sysadmin.')->group(function () {
+    
+    // dashboard (gestion de admins academicos)
+    Route::get('/dashboard', [SysAdminController::class, 'index'])->name('dashboard');
+    
+    // crear y eliminar admins academicos
+    Route::post('/admins', [SysAdminController::class, 'storeAdmin'])->name('admins.store');
+    Route::delete('/admins/{user}', [SysAdminController::class, 'destroyAdmin'])->name('admins.destroy');
+
+    // editar y actualizar
+    Route::get('/admins/{user}/edit', [SysAdminController::class, 'editAdmin'])->name('admins.edit');
+    Route::put('/admins/{user}', [SysAdminController::class, 'updateAdmin'])->name('admins.update');
+
+    // ver bitacora
+    Route::get('/bitacora', [SysAdminController::class, 'bitacora'])->name('bitacora');
+});
+

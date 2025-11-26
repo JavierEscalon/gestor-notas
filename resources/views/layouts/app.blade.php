@@ -32,6 +32,10 @@
                     <a class="navbar-brand" href="{{ route('padre.dashboard') }}">
                         GESTOR DE NOTAS CESJB (Padre de Familia)
                     </a>
+                @elseif(auth()->user()->role == 'sysadmin')
+                    <a class="navbar-brand" href="{{ route('sysadmin.dashboard') }}">
+                        GESTOR DE NOTAS CESJB (Super Admin)
+                    </a>
                 @endif
                 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="toggle navigation">
@@ -74,59 +78,66 @@
                         </h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                                    Dashboard
+                                <a class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('docentes*') ? 'active' : '' }}" href="{{ route('docentes.index') }}">Gestión Docentes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('alumnos*') ? 'active' : '' }}" href="{{ route('alumnos.index') }}">Gestión Alumnos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('materias*') ? 'active' : '' }}" href="{{ route('materias.index') }}">Gestión Materias</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('admin/padres*') ? 'active' : '' }}" href="{{ route('admin.padres.index') }}">Gestión Padres</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('periodos*') ? 'active' : '' }}" href="{{ route('periodos.index') }}">Gestión Períodos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('cursos*') ? 'active' : '' }}" href="{{ route('cursos.index') }}">Gestión Cursos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('admin/reportes*') ? 'active' : '' }}" href="{{ route('admin.reportes.index') }}">Reportes Finales</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+                @endif
+
+                @if(auth()->user()->role == 'sysadmin')
+                <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                    <div class="position-sticky pt-3">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-white-50">
+                            <span>Sistema</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link text-white {{ request()->is('sysadmin/dashboard') ? 'active bg-secondary' : '' }}" href="{{ route('sysadmin.dashboard') }}">
+                                    Gestión de Usuarios
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->is('docentes*') ? 'active' : '' }}" href="{{ route('docentes.index') }}">
-                                    Gestión Docentes
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('alumnos*') ? 'active' : '' }}" href="{{ route('alumnos.index') }}">
-                                    Gestión Alumnos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('materias*') ? 'active' : '' }}" href="{{ route('materias.index') }}">
-                                    Gestión Materias
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('admin/padres*') ? 'active' : '' }}" href="{{ route('admin.padres.index') }}">
-                                    Gestión Padres
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('periodos*') ? 'active' : '' }}" href="{{ route('periodos.index') }}">
-                                    Gestión Períodos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('cursos*') ? 'active' : '' }}" href="{{ route('cursos.index') }}">
-                                    Gestión Cursos
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('admin/reportes*') ? 'active' : '' }}" href="{{ route('admin.reportes.index') }}">
-                                    Reportes Finales
+                                <a class="nav-link text-white {{ request()->is('sysadmin/bitacora') ? 'active bg-secondary' : '' }}" href="{{ route('sysadmin.bitacora') }}">
+                                    Bitácora de Eventos
                                 </a>
                             </li>
                         </ul>
                     </div>
                 </nav>
                 @endif
-                <main class="{{ auth()->user()->role == 'admin' ? 'col-md-9 ms-sm-auto col-lg-10' : 'col-md-12' }} px-md-4">
+
+                <main class="{{ in_array(auth()->user()->role, ['admin', 'sysadmin']) ? 'col-md-9 ms-sm-auto col-lg-10' : 'col-md-12' }} px-md-4">
                     @yield('content')
                 </main>
-                </div>
-        </div>
-        @else
-        <main class="py-4">
-            @yield('content')
-        </main>
+            
+            </div> </div> @else
+            <main class="py-4">
+                @yield('content')
+            </main>
         @endauth
-        </div>
+
+    </div>
 </body>
 </html>
