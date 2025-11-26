@@ -94,6 +94,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {{ request()->is('admin/padres*') ? 'active' : '' }}" href="{{ route('admin.padres.index') }}">
+                                    Gestión Padres
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {{ request()->is('periodos*') ? 'active' : '' }}" href="{{ route('periodos.index') }}">
                                     Gestión Períodos
                                 </a>
@@ -101,6 +106,11 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->is('cursos*') ? 'active' : '' }}" href="{{ route('cursos.index') }}">
                                     Gestión Cursos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('admin/reportes*') ? 'active' : '' }}" href="{{ route('admin.reportes.index') }}">
+                                    Reportes Finales
                                 </a>
                             </li>
                         </ul>

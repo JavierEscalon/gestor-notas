@@ -222,4 +222,15 @@ class CursoController extends Controller
         return back()->with('success', '¡Alumno quitado del curso exitosamente!');
     }
 
+    /**
+     * permite al administrador reabrir un periodo cerrado.
+     */
+    public function reabrirPeriodo(Curso $curso)
+    {
+        // solo el admin debería poder hacer esto (aunque la ruta ya lo protege)
+        $curso->update(['is_calificaciones_closed' => false]);
+
+        return back()->with('success', '¡El período ha sido reabierto! El docente puede modificar notas nuevamente.');
+    }
+
 }

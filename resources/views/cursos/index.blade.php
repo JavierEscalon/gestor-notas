@@ -18,16 +18,15 @@
 @endif
 
 <div class="table-responsive">
-    <table class="table table-striped table-sm">
+<table class="table table-striped table-sm align-middle">
         <thead>
             <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Materia</th>
-                <th scope="col">Docente</th>
-                <th scope="col">Grado</th>
-                <th scope="col">Sección</th>
-                <th scope="col">Período</th>
-                <th scope="col">Acciones</th>
+                <th>ID</th>
+                <th>Materia</th>
+                <th>Docente</th>
+                <th>Grado/Sección</th>
+                <th>Período</th>
+                <th>Estado</th> <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -36,25 +35,38 @@
                     <td>{{ $curso->id }}</td>
                     <td>{{ $curso->materia->name }}</td>
                     <td>{{ $curso->docente->first_name }} {{ $curso->docente->last_name }}</td>
-                    <td>{{ $curso->grado->name }}</td>
-                    <td>{{ $curso->seccion->name }}</td>
+                    <td>{{ $curso->grado->name }} "{{ $curso->seccion->name }}"</td>
                     <td>{{ $curso->periodo->name }}</td>
+                    
+                    <td>
+                        @if($curso->is_calificaciones_closed)
+                            <span class="badge bg-danger">Cerrado</span>
+                        @else
+                            <span class="badge bg-success">Abierto</span>
+                        @endif
+                    </td>
+
                     <td class="d-flex">
-                        <a href="{{ route('cursos.show', $curso->id) }}" class="btn btn-sm btn-info me-1">
-                            Inscribir Alumnos
-                        </a>    
+                        @if($curso->is_calificaciones_closed)
+                            <form action="{{ route('cursos.reabrir', $curso->id) }}" method="POST" class="me-2" onsubmit="return confirm('¿Reabrir este curso para edición?');">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Reabrir Período">
+                                    Reabrir
+                                </button>
+                            </form>
+                        @endif
+
+                        <a href="{{ route('cursos.show', $curso->id) }}" class="btn btn-sm btn-info me-1" title="Inscribir Alumnos">Inscripción</a>
                         <a href="{{ route('cursos.edit', $curso->id) }}" class="btn btn-sm btn-warning me-1">Editar</a>
-                        <form action="{{ route('cursos.destroy', $curso->id) }}" method="post" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este curso?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                        
+                        <form action="{{ route('cursos.destroy', $curso->id) }}" method="post" onsubmit="return confirm('¿Eliminar curso?');">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-danger">X</button>
                         </form>
                     </td>
                 </tr>
             @empty
-                <tr>
-                    <td colspan="7">No hay cursos registrados aún.</td>
-                </tr>
+                <tr><td colspan="7">No hay cursos registrados.</td></tr>
             @endforelse
         </tbody>
     </table>

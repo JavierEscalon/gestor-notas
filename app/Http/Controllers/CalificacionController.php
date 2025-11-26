@@ -8,13 +8,19 @@ use App\Models\TipoActividad; // Para obtener la lista de tipos
 use App\Models\Calificacion; // Para guardar y leer las notas
 
 class CalificacionController extends Controller
-{
+{   
     /**
      * Muestra el formulario para registrar y ver calificaciones de un curso.
      * (GET /docente/cursos/{curso}/calificaciones)
      */
     public function show(Curso $curso)
     {
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
         // 1 Cargamos el curso junto con los alumnos ya inscritos
         $curso->load('alumnos');
 
@@ -43,6 +49,17 @@ class CalificacionController extends Controller
      */
     public function store(Request $request, Curso $curso)
     {
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
+        // bloqueo de edicion en caso un periodo este cerrado
+        if ($curso->is_calificaciones_closed) {
+            return back()->withErrors(['error' => 'Este período ya está cerrado. No se pueden modificar las notas.']);
+        }
+
         // 1 Validamos los datos del formulario
         $request->validate([
             'activity_name' => 'required|string|max:255',
@@ -104,6 +121,18 @@ class CalificacionController extends Controller
      */
     public function editActivity(Curso $curso, $activity_name)
     {
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
+        // --- BLOQUEO DE SEGURIDAD --- 
+        if ($curso->is_calificaciones_closed) {
+            return redirect()->route('docente.cursos.calificaciones', $curso->id)
+                             ->withErrors(['error' => 'Este período está cerrado. No puedes acceder a la edición.']);
+        }
+
         // 1 Cargamos el curso y sus alumnos
         $curso->load('alumnos');
 
@@ -137,6 +166,17 @@ class CalificacionController extends Controller
      */
     public function updateActivity(Request $request, Curso $curso, $activity_name)
     {
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
+        // bloqueo de edicion en caso un periodo este cerrado
+        if ($curso->is_calificaciones_closed) {
+            return back()->withErrors(['error' => 'Este período ya está cerrado. No se pueden modificar las notas.']);
+        }
+
         // 1 Validamos solo las notas (no permitimos cambiar nombre ni porcentaje aquí por simplicidad)
         $request->validate([
             'scores' => 'required|array',
@@ -163,7 +203,18 @@ class CalificacionController extends Controller
      * (DELETE /docente/cursos/{curso}/calificaciones/{activity_name})
      */
     public function destroyActivity(Curso $curso, $activity_name)
-    {
+    {   
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
+        // bloqueo de edicion en caso un periodo este cerrado
+        if ($curso->is_calificaciones_closed) {
+            return back()->withErrors(['error' => 'Este período ya está cerrado. No se pueden modificar las notas.']);
+        }
+
         // 1 Borramos todos los registros que coincidan con el curso y el nombre de la actividad
         Calificacion::where('curso_id', $curso->id)
                     ->where('activity_name', $activity_name)

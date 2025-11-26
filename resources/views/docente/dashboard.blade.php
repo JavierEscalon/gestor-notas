@@ -27,6 +27,7 @@
                     <td>
                         <a href="{{ route('docente.cursos.calificaciones', $curso->id) }}" class="btn btn-sm btn-primary">Registrar Calificaciones</a>
                         <a href="{{ route('docente.cursos.asistencia', $curso->id) }}" class="btn btn-sm btn-success">Asistencia</a>
+                        <a href="{{ route('docente.cursos.reporte', $curso->id) }}" class="btn btn-sm btn-warning text-dark">Reporte</a>
                     </td>
                 </tr>
             @empty

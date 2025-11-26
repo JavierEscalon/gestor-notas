@@ -13,7 +13,13 @@ class AsistenciaController extends Controller
      * muestra la hoja de asistencia de un curso
      */
     public function index(Request $request, Curso $curso)
-    {
+    {   
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
         // 1 determinamos la fecha (hoy o la que elija el docente)
         $fecha = $request->input('fecha', Carbon::now()->format('Y-m-d'));
 
@@ -21,7 +27,7 @@ class AsistenciaController extends Controller
         $curso->load('alumnos');
 
         // 3 buscamos las asistencias que ya existen para esa fecha
-        //    y las organizamos por id de alumno para facil acceso
+        // y las organizamos por id de alumno para facil acceso
         $asistencias = Asistencia::where('curso_id', $curso->id)
                                  ->where('fecha', $fecha)
                                  ->get()
@@ -38,7 +44,13 @@ class AsistenciaController extends Controller
      * guarda o actualiza la asistencia
      */
     public function store(Request $request, Curso $curso)
-    {
+    {   
+
+        // SEGURIDAD: verificar que este curso pertenezca al docente logueado
+        if ($curso->docente_id !== auth()->user()->docente->id) {
+            abort(403, 'Acceso denegado. Este curso no te pertenece.');
+        }
+
         $request->validate([
             'fecha' => 'required|date',
             'asistencia' => 'required|array', // (array de estados)

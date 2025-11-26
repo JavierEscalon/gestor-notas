@@ -11,6 +11,7 @@ use App\Http\Controllers\CursoController;
 use App\Http\Controllers\CalificacionController;
 use App\Http\Controllers\Docente\DashboardController as DocenteDashboardController;
 use App\Http\Controllers\Estudiante\DashboardController as EstudianteDashboardController;
+use App\Http\Controllers\Admin\BoletaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,100 +24,111 @@ use App\Http\Controllers\Estudiante\DashboardController as EstudianteDashboardCo
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// 1. CORRECCIÓN: La raíz apunta al Login
+Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 
-// --- Rutas de Autenticación ---
-
-// Muestra la página de login (nuestra vista login.blade.php)
+// Rutas de Autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-
 // Procesa el formulario de login cuando el usuario lo envía
 Route::post('login', [LoginController::class, 'login']);
-
 // Maneja el "Cerrar Sesión"
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
+// --- RUTAS DEL ADMIN ---
+// Usamos 'middleware(['auth', 'role:admin'])' para proteger todas estas rutas
+Route::middleware(['auth', 'role:admin'])->group(function () {
 
-// --- rutas protegidas por autenticacion ---
+    // La ruta principal del dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// usamos 'middleware('auth')' para que solo usuarios logueados
-// puedan acceder a estas rutas.
-route::middleware(['auth'])->group(function () {
+    // -- GESTIÓN DOCENTES --
+    Route::get('/docentes', [DocenteController::class, 'index'])->name('docentes.index');
+    Route::get('/docentes/crear', [DocenteController::class, 'create'])->name('docentes.create');
+    Route::post('/docentes', [DocenteController::class, 'store'])->name('docentes.store');
+    Route::get('/docentes/{docente}/editar', [DocenteController::class, 'edit'])->name('docentes.edit');
+    Route::put('/docentes/{docente}', [DocenteController::class, 'update'])->name('docentes.update');
+    Route::delete('/docentes/{docente}', [DocenteController::class, 'destroy'])->name('docentes.destroy');
 
-    // la ruta principal del dashboard
-    route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-
-    // rutas para la gestion de docentes
-    route::get('/docentes', [DocenteController::class, 'index'])->name('docentes.index');
-    route::get('/docentes/crear', [DocenteController::class, 'create'])->name('docentes.create');
-    route::post('/docentes', [DocenteController::class, 'store'])->name('docentes.store');
-    route::get('/docentes/{docente}/editar', [DocenteController::class, 'edit'])->name('docentes.edit');
-    route::put('/docentes/{docente}', [DocenteController::class, 'update'])->name('docentes.update');
-    route::delete('/docentes/{docente}', [DocenteController::class, 'destroy'])->name('docentes.destroy');
-
-    // rutas para la gestion de alumnos
-    route::get('/alumnos', [AlumnoController::class, 'index'])->name('alumnos.index');
-    route::get('/alumnos/crear', [AlumnoController::class, 'create'])->name('alumnos.create');
-    route::post('/alumnos', [AlumnoController::class, 'store'])->name('alumnos.store');
-    route::get('/alumnos/{alumno}/editar', [AlumnoController::class, 'edit'])->name('alumnos.edit');
-    route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->name('alumnos.update');
+    // -- GESTIÓN ALUMNOS --
+    Route::get('/alumnos', [AlumnoController::class, 'index'])->name('alumnos.index');
+    Route::get('/alumnos/crear', [AlumnoController::class, 'create'])->name('alumnos.create');
+    Route::post('/alumnos', [AlumnoController::class, 'store'])->name('alumnos.store');
+    Route::get('/alumnos/{alumno}/editar', [AlumnoController::class, 'edit'])->name('alumnos.edit');
+    Route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->name('alumnos.update');
     Route::delete('/alumnos/{alumno}', [AlumnoController::class, 'destroy'])->name('alumnos.destroy');
 
-    // ruta para la gestion de materias
-    route::resource('materias', MateriaController::class);
+    // --- GESTIÓN DE PADRES (ADMIN) ---
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // CRUD básico
+        Route::resource('padres', App\Http\Controllers\Admin\PadreController::class);        
+        // Rutas para asignar hijos
+        Route::get('padres/{padre}/hijos', [App\Http\Controllers\Admin\PadreController::class, 'hijos'])->name('padres.hijos');
+        Route::post('padres/{padre}/hijos', [App\Http\Controllers\Admin\PadreController::class, 'updateHijos'])->name('padres.hijos.store');
+    });
 
-    // ruta para la gestion de periodo escolar
+    // -- OTROS RECURSOS --
+    // Ruta para la gestión de materias
+    Route::resource('materias', MateriaController::class);
+    // Ruta para la gestión de periodo escolar
     Route::resource('periodos', PeriodoEscolarController::class);
-
-    // ruta para la gestion de cursos
+    // Ruta para la gestión de cursos
     Route::resource('cursos', CursoController::class);
     
-    // ruta para la gestion de inscripcion
+    // Reabrir periodo
+    Route::post('/cursos/{curso}/reabrir', [CursoController::class, 'reabrirPeriodo'])->name('cursos.reabrir');
+
+    // -- BOLETAS --
+    // Individual
+    Route::get('/admin/boleta/{alumno}', [BoletaController::class, 'download'])->name('admin.boleta.download');
+    // Masiva (batch)
+    Route::get('/admin/boleta/batch/grado/{grado}/seccion/{seccion}', [BoletaController::class, 'downloadBatch'])->name('admin.boleta.batch');
+
+    // Ruta para la gestión de inscripcion
     Route::post('/cursos/{curso}/inscribir', [CursoController::class, 'inscribirAlumnos'])->name('cursos.inscribir');
     Route::delete('/cursos/{curso}/quitar/{alumno}', [CursoController::class, 'quitarAlumno'])->name('cursos.quitar');
 
+    // --- RUTAS DE REPORTES ADMINISTRATIVOS ---
+    Route::prefix('admin/reportes')->name('admin.reportes.')->group(function () {
+        // Vista inicial, selección de Grado
+        Route::get('/', [App\Http\Controllers\Admin\ReporteAdminController::class, 'index'])->name('index');
+        
+        // Vista detallada, matriz de notas
+        Route::get('/grado/{grado}/seccion/{seccion}', [App\Http\Controllers\Admin\ReporteAdminController::class, 'show'])->name('show');
+    });
+
+}); // Fin del grupo Admin
+
 
 // --- RUTAS DEL DOCENTE ---
-Route::middleware(['auth'])->prefix('docente')->name('docente.')->group(function () {
-
-    // la ruta del dashboard del docente
+Route::middleware(['auth', 'role:docente'])->prefix('docente')->name('docente.')->group(function () {
+    // La ruta del dashboard del docente
     Route::get('/dashboard', [DocenteDashboardController::class, 'index'])->name('dashboard');
-
-    // la ruta para ver el formulario de calificaciones de un curso
+    // La ruta para ver el formulario de calificaciones de un curso
     Route::get('/cursos/{curso}/calificaciones', [CalificacionController::class, 'show'])->name('cursos.calificaciones');
-
-    // ruta para guardar las notas
+    // Ruta para guardar las notas
     Route::post('/cursos/{curso}/calificaciones', [CalificacionController::class, 'store'])->name('cursos.calificaciones.store');
-
-    // ruta para borrar actividades
+    // Ruta para borrar actividades
     Route::delete('/cursos/{curso}/calificaciones/{activity_name}', [CalificacionController::class, 'destroyActivity'])->name('calificaciones.destroy');
-
-    // (rutas que agregamos para editar)
+    // (Rutas que agregamos para editar)
     Route::get('/cursos/{curso}/calificaciones/{activity_name}/edit', [CalificacionController::class, 'editActivity'])->name('calificaciones.edit');
     Route::put('/cursos/{curso}/calificaciones/{activity_name}', [CalificacionController::class, 'updateActivity'])->name('calificaciones.update');
-
-    // rutas para control de asistencia
+    // Rutas para control de asistencia
     Route::get('/cursos/{curso}/asistencia', [App\Http\Controllers\AsistenciaController::class, 'index'])->name('cursos.asistencia');
     Route::post('/cursos/{curso}/asistencia', [App\Http\Controllers\AsistenciaController::class, 'store'])->name('cursos.asistencia.store');
+    // Rutas para el reporte
+    Route::get('/cursos/{curso}/reporte', [App\Http\Controllers\Docente\ReporteController::class, 'show'])->name('cursos.reporte');
+    Route::post('/cursos/{curso}/cerrar', [App\Http\Controllers\Docente\ReporteController::class, 'cerrarPeriodo'])->name('cursos.cerrar');
 });
 
 
 // --- RUTAS DEL ESTUDIANTE ---
-Route::middleware(['auth'])->prefix('estudiante')->name('estudiante.')->group(function () {
-
-    // la ruta del dashboard del alumno
-    Route::get('/dashboard', [App\Http\Controllers\Estudiante\DashboardController::class, 'index'])->name('dashboard');
+Route::middleware(['auth', 'role:estudiante'])->prefix('estudiante')->name('estudiante.')->group(function () {
+    // La ruta del dashboard del alumno
+    Route::get('/dashboard', [EstudianteDashboardController::class, 'index'])->name('dashboard');
 });
 
 
 // --- RUTAS DEL PADRE DE FAMILIA ---
-Route::middleware(['auth'])->prefix('padre')->name('padre.')->group(function () {
+Route::middleware(['auth', 'role:padre'])->prefix('padre')->name('padre.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Padre\DashboardController::class, 'index'])->name('dashboard');
-});
-
-
-
 });

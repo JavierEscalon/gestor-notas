@@ -19,6 +19,7 @@ class Curso extends Model
         'grado_id',
         'seccion_id',
         'periodo_id',
+        'is_calificaciones_closed',
     ];
 
     // -- (relaciones) --

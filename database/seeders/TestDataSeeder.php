@@ -15,27 +15,20 @@ use Illuminate\Support\Facades\Hash;
 
 class TestDataSeeder extends Seeder
 {
-    /**
-     * run the database seeds.
-     * (crea un escenario de prueba completo con 50 alumnos)
-     *
-     * @return void
-     */
     public function run()
     {
-        // --- 1. obtenemos los catalogos que ya existen ---
+        // 1. Obtenemos catálogos base (Grado y Sección creados por otros seeders)
         $grado = Grado::first();
         $seccion = Seccion::first();
 
-        // (si no hay grados o secciones, nos detenemos para evitar un error)
         if (!$grado || !$seccion) {
-            $this->command->error('No se encontraron grados o secciones. Ejecuta los seeders de catalogos primero.');
+            $this->command->error('No hay grados/secciones. Ejecuta migrate:fresh --seed');
             return;
         }
 
-        // --- creamos un docente de prueba ---
+        // 2. Creamos un Docente de prueba
         $userDocente = User::create([
-            'name' => 'Docente Prueba',
+            'name' => 'Docente General',
             'email' => 'docente@gestornotas.com',
             'password' => Hash::make('password'),
             'role' => 'docente',
@@ -44,63 +37,68 @@ class TestDataSeeder extends Seeder
             'user_id' => $userDocente->id,
             'first_name' => 'Docente',
             'last_name' => 'Prueba',
-            'specialty' => 'Pruebas',
+            'specialty' => 'General',
         ]);
 
-        // --- creamos 50 alumnos de prueba ---
-
-        $this->command->info('Creando 50 alumnos de prueba...');
-
-        $alumnos_ids_para_inscribir = []; // (un array para guardar los ids)
-
-        for ($i = 1; $i <= 50; $i++) {
-
-            // (creamos el usuario para el login)
-            $userAlumno = User::create([
+        // 3. Creamos 10 Alumnos de prueba
+        $this->command->info('Creando alumnos...');
+        $alumnos_ids = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $user = User::create([
                 'name' => "Alumno $i Apellido",
                 'email' => "alumno$i@gestornotas.com",
                 'password' => Hash::make('password'),
                 'role' => 'estudiante',
             ]);
-
-            // (creamos el perfil del alumno)
             $alumno = Alumno::create([
-                'user_id' => $userAlumno->id,
+                'user_id' => $user->id,
                 'grado_id' => $grado->id,
                 'seccion_id' => $seccion->id,
-                'first_name' => "Alumno $i",
-                'last_name' => "Apellido $i",
-                'student_id_code' => "1000$i", // (carnet unico)
+                'first_name' => "Alumno",
+                'last_name' => "$i",
+                'student_id_code' => "2025-$i",
             ]);
-
-            // (guardamos el id para el paso final)
-            $alumnos_ids_para_inscribir[] = $alumno->id;
+            $alumnos_ids[] = $alumno->id;
         }
 
+        // 4. Creamos las 3 Materias solicitadas
+        $nombresMaterias = ['Matemáticas', 'Literatura', 'Ciencias'];
+        $materiasGuardadas = [];
+        
+        foreach ($nombresMaterias as $nombre) {
+            $materiasGuardadas[] = Materia::create(['name' => $nombre]);
+        }
 
-        // --- creamos una materia y un periodo de prueba ---
-        $materia = Materia::create([
-            'name' => 'Materia de Prueba (Curso Lleno)',
-        ]);
-        $periodo = PeriodoEscolar::create([
-            'name' => 'Trimestre de Prueba 2025',
-            'start_date' => '2025-01-01',
-            'end_date' => '2025-03-31',
-            'is_active' => true,
-        ]);
+        // 5. Creamos 3 Períodos y los cursos correspondientes
+        $trimestres = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3'];
+        
+        $this->command->info('Creando periodos y cursos...');
 
-        // --- creamos el curso que une todo ---
-        $curso = Curso::create([
-            'materia_id' => $materia->id,
-            'docente_id' => $docente->id,
-            'grado_id' => $grado->id,
-            'seccion_id' => $seccion->id,
-            'periodo_id' => $periodo->id,
-        ]);
+        foreach ($trimestres as $index => $nombrePeriodo) {
+            // Crear Periodo
+            $periodo = PeriodoEscolar::create([
+                'name' => $nombrePeriodo . ' - 2025',
+                'start_date' => now()->addMonths($index * 3), // Fechas escalonadas
+                'end_date' => now()->addMonths(($index * 3) + 3),
+                'is_active' => ($index == 0), // Solo el primero está activo
+            ]);
 
-        // --- (el paso final) inscribimos a los 50 alumnos en el curso ---
-        $curso->alumnos()->attach($alumnos_ids_para_inscribir);
+            // Por cada materia, creamos un curso en este periodo
+            foreach ($materiasGuardadas as $materia) {
+                $curso = Curso::create([
+                    'materia_id' => $materia->id,
+                    'docente_id' => $docente->id, // Asignamos el mismo docente a todo para probar fácil
+                    'grado_id' => $grado->id,
+                    'seccion_id' => $seccion->id,
+                    'periodo_id' => $periodo->id,
+                    'is_calificaciones_closed' => false,
+                ]);
 
-        $this->command->info('¡Escenario de prueba con 50 alumnos creado exitosamente!');
+                // Inscribimos a TODOS los alumnos en cada curso
+                $curso->alumnos()->attach($alumnos_ids);
+            }
+        }
+
+        $this->command->info('¡Escenario completo creado! (10 Alumnos inscritos en 3 materias durante 3 trimestres)');
     }
 }
