@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-1 mb-2 border-bottom">
     <h1 class="h2">Panel de Control Académico</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
@@ -11,7 +11,7 @@
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-md-3">
         <div class="card text-white bg-primary shadow-sm h-100">
             <div class="card-body">
@@ -86,7 +86,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8 mb-4">
+    <div class="col-md-8 mb-2">
         <div class="card shadow-sm">
             <div class="card-header bg-white fw-bold">
                 📢 Actividad Reciente del Sistema
@@ -139,7 +139,7 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card shadow-sm mb-4">
+        <div class="card shadow-sm mb-2">
             <div class="card-header bg-white fw-bold">
                 ⚡ Accesos Rápidos
             </div>

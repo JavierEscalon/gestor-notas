@@ -52,8 +52,8 @@
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
+                                        onclick="event.preventDefault();
+                                                        document.getElementById('logout-form').submit();">
                                         {{ __('Cerrar Sesión') }}
                                     </a>
                                     <form id="logout-form" action="{{ route('logout') }}" method="post" class="d-none">
@@ -128,12 +128,14 @@
                 </nav>
                 @endif
 
-                <main class="{{ in_array(auth()->user()->role, ['admin', 'sysadmin']) ? 'col-md-9 ms-sm-auto col-lg-10' : 'col-md-12' }} px-md-4">
+                <main class="{{ in_array(auth()->user()->role, ['admin', 'sysadmin']) ? 'col-md-9 ms-sm-auto col-lg-10' : 'col-md-12' }} px-md-4 py-2">
                     @yield('content')
                 </main>
             
-            </div> </div> @else
-            <main class="py-4">
+            </div>
+        </div>
+        @else
+            <main class="class="{{ Request::is('login') ? 'p-0' : 'py-4' }}">
                 @yield('content')
             </main>
         @endauth

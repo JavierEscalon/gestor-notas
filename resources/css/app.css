@@ -1,2 +1,47 @@
 
 @import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* estilos para el login */
+.login-page {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* para que la imagen no se salga del borde */
+}
+
+.login-header {
+    background-color: #0d6efd; /* azul (o color corporativo) */
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.login-logo {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.form-floating > label {
+    left: 10px;
+}
+
+.btn-login {
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+}

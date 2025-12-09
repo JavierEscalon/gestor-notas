@@ -76,12 +76,12 @@ Sigue estos pasos para desplegar el proyecto desde cero:
 
     El seeder automático genera los siguientes usuarios para probar todos los roles: (La contraseña es la misma para todos).
 
-Rol                 Email                       Contraseña  Descripción
-Super Admin         sysadmin@gestornotas.com    password    Acceso a Bitácora y Gestión de Admins.
-Admin Académico     admi@gestornotas.com        password    Gestión escolar completa.
-Docente             docente@gestornotas.com     password    Gestión de sus cursos asignados.
-Padre de Familia    padre@gestornotas.com       password    Tiene asignados a los alumnos 1 y 2.
-Estudiante          alumno1@gestornotas.com     password    (Disponible del alumno1 al alumno10).
+Rol | Email | Contraseña | Descripción
+Super Admin | sysadmin@gestornotas.com | password | Acceso a Bitácora y Gestión de Admins
+Admin Académico | admin@gestornotas.com | password | Gestión escolar completa
+Docente | docente@gestornotas.com | password | Gestión de sus cursos asignados
+Padre de Familia | padre@gestornotas.com | password | Tiene asignados a los alumnos 1 y 2
+Estudiante | alumno1@gestornotas.com | password | Disponible del alumno1 al alumno10
 
 8. **Tecnologías Utilizadas**
 
