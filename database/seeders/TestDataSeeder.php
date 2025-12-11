@@ -17,7 +17,7 @@ class TestDataSeeder extends Seeder
 {
     public function run()
     {
-        // 1. Obtenemos catálogos base (Grado y Sección creados por otros seeders)
+        // 1. Obtenemos catálogos base
         $grado = Grado::first();
         $seccion = Seccion::first();
 
@@ -26,7 +26,8 @@ class TestDataSeeder extends Seeder
             return;
         }
 
-        // 2. Creamos un Docente de prueba
+        // 2. Creamos Docente y SysAdmin (si no existen)
+        // (El UserSeeder probablemente ya crea el SysAdmin, aquí aseguramos el Docente)
         $userDocente = User::create([
             'name' => 'Docente General',
             'email' => 'docente@gestornotas.com',
@@ -40,9 +41,10 @@ class TestDataSeeder extends Seeder
             'specialty' => 'General',
         ]);
 
-        // 3. Creamos 10 Alumnos de prueba
-        $this->command->info('Creando alumnos...');
+        // 3. Creamos 10 Alumnos con EXPEDIENTE COMPLETO
+        $this->command->info('Creando alumnos con expedientes completos...');
         $alumnos_ids = [];
+        
         for ($i = 1; $i <= 10; $i++) {
             $user = User::create([
                 'name' => "Alumno $i Apellido",
@@ -50,55 +52,64 @@ class TestDataSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'estudiante',
             ]);
+
+            // Generamos datos aleatorios para darle realismo
+            $genero = (rand(0, 1) == 1) ? 'M' : 'F';
+            
             $alumno = Alumno::create([
                 'user_id' => $user->id,
                 'grado_id' => $grado->id,
                 'seccion_id' => $seccion->id,
                 'first_name' => "Alumno",
                 'last_name' => "$i",
-                'student_id_code' => "2025-$i",
+                'student_id_code' => "2025-" . str_pad($i, 3, '0', STR_PAD_LEFT), // Ej: 2025-001
+                
+                // --- NUEVOS DATOS REALES ---
+                'birth_date' => now()->subYears(rand(12, 16))->subDays(rand(1, 365)), // Entre 12 y 16 años atrás
+                'gender' => $genero,
+                'address' => 'Colonia San Benito, Calle #' . rand(1, 20) . ', Casa ' . rand(100, 999),
+                'phone' => '7' . rand(100, 999) . '-' . rand(1000, 9999), // Formato teléfono móvil
+                'emergency_contact_name' => 'Padre/Madre de Alumno ' . $i,
+                'emergency_contact_phone' => '2' . rand(100, 999) . '-' . rand(1000, 9999),
+                'medical_conditions' => (rand(1, 5) == 1) ? 'Alergia al polvo / Asma' : null, // 20% de prob. de tener condición
+                'status' => 'activo',
             ]);
+            
             $alumnos_ids[] = $alumno->id;
         }
 
-        // 4. Creamos las 3 Materias solicitadas
+        // 4. Creamos Materias
         $nombresMaterias = ['Matemáticas', 'Literatura', 'Ciencias'];
         $materiasGuardadas = [];
-        
         foreach ($nombresMaterias as $nombre) {
-            $materiasGuardadas[] = Materia::create(['name' => $nombre]);
+            $materiasGuardadas[] = Materia::firstOrCreate(['name' => $nombre]);
         }
 
-        // 5. Creamos 3 Períodos y los cursos correspondientes
+        // 5. Creamos 3 Períodos y Cursos
         $trimestres = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3'];
-        
-        $this->command->info('Creando periodos y cursos...');
+        $this->command->info('Creando estructura académica anual...');
 
         foreach ($trimestres as $index => $nombrePeriodo) {
-            // Crear Periodo
             $periodo = PeriodoEscolar::create([
                 'name' => $nombrePeriodo . ' - 2025',
-                'start_date' => now()->addMonths($index * 3), // Fechas escalonadas
+                'start_date' => now()->addMonths($index * 3),
                 'end_date' => now()->addMonths(($index * 3) + 3),
-                'is_active' => ($index == 0), // Solo el primero está activo
+                'is_active' => ($index == 0),
             ]);
 
-            // Por cada materia, creamos un curso en este periodo
             foreach ($materiasGuardadas as $materia) {
                 $curso = Curso::create([
                     'materia_id' => $materia->id,
-                    'docente_id' => $docente->id, // Asignamos el mismo docente a todo para probar fácil
+                    'docente_id' => $docente->id,
                     'grado_id' => $grado->id,
                     'seccion_id' => $seccion->id,
                     'periodo_id' => $periodo->id,
                     'is_calificaciones_closed' => false,
                 ]);
-
-                // Inscribimos a TODOS los alumnos en cada curso
                 $curso->alumnos()->attach($alumnos_ids);
             }
         }
 
-        $this->command->info('¡Escenario completo creado! (10 Alumnos inscritos en 3 materias durante 3 trimestres)');
+        $this->command->info('¡Datos de prueba generados exitosamente!');
     }
 }

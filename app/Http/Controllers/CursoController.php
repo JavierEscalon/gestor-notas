@@ -16,12 +16,31 @@ class CursoController extends Controller
     /**
      * muestra la lista de cursos.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // (buscamos todos los cursos y sus relaciones)
-        $cursos = Curso::with('materia', 'docente', 'grado', 'seccion', 'periodo')->get();
-        
-        return view('cursos.index', ['cursos' => $cursos]);
+        $query = Curso::with(['materia', 'docente', 'grado', 'seccion', 'periodo']);
+
+        // Búsqueda inteligente: Por materia, docente o grado
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->whereHas('materia', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            })
+            ->orWhereHas('docente', function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            })
+            ->orWhereHas('grado', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+
+        // Ordenar por período más reciente
+        $cursos = $query->orderBy('periodo_id', 'desc')
+                        ->paginate(10)
+                        ->withQueryString();
+
+        return view('cursos.index', compact('cursos'));
     }
 
     /**

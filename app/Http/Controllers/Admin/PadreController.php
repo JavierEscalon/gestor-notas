@@ -14,9 +14,27 @@ class PadreController extends Controller
     /**
      * muestra la lista de padres.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $padres = Padre::with('user', 'alumnos')->get();
+        // 1 preparamos la consulta cargando relaciones
+        $query = Padre::with(['user', 'alumnos']);
+
+        // 2 aplicamos el filtro si el usuario escribio algo en el buscador
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhereHas('user', function($qUser) use ($search) {
+                        $qUser->where('email', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // 3 usamos paginate en lugar de get()
+        $padres = $query->paginate(10)->withQueryString();
+
         return view('admin.padres.index', ['padres' => $padres]);
     }
 
@@ -60,7 +78,7 @@ class PadreController extends Controller
 
         // 4 redirigir a la vista de asignar hijos
         return redirect()->route('admin.padres.hijos', $padre->id)
-                         ->with('success', 'Padre creado. Ahora selecciona sus hijos.');
+                            ->with('success', 'Padre creado. Ahora selecciona sus hijos.');
     }
 
     /**
@@ -104,7 +122,10 @@ class PadreController extends Controller
      */
     public function destroy(Padre $padre)
     {
-        $padre->user->delete();
+        // eliminamos usuario y padre
+        if($padre->user) {
+            $padre->user->delete();
+        }
         $padre->delete();
         return back()->with('success', 'Padre eliminado.');
     }

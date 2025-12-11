@@ -10,12 +10,19 @@ class MateriaController extends Controller
     /**
      * muestra la lista de materias. (read)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // buscamos todas las materias
-        $materias = Materia::all();
-        
-        return view('materias.index', ['materias' => $materias]);
+        $query = Materia::query();
+
+        // Filtro de búsqueda por nombre
+        if ($request->has('search') && $request->search != '') {
+            $query->where('name', 'like', "%{$request->search}%")
+                     ->orWhere('description', 'like', "%{$request->search}%");
+        }
+
+        $materias = $query->orderBy('name')->paginate(10)->withQueryString();
+
+        return view('materias.index', compact('materias'));
     }
 
     /**

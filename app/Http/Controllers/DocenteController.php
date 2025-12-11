@@ -12,14 +12,25 @@ class DocenteController extends Controller
     /**
      * muestra la lista de docentes. (read)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // 1. buscamos todos los docentes en la base de datos
-        //    y usamos 'with' para traer tambien la info de su 'user'
-        $docentes = Docente::with('user')->get();
+        $query = Docente::with('user');
 
-        // 2. le pasamos la variable $docentes a la vista
-        return view('docentes.index', ['docentes' => $docentes]);
+        // 1. Búsqueda por Nombre, Apellido o Email
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhereHas('user', function($userQuery) use ($search) {
+                        $userQuery->where('email', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $docentes = $query->paginate(10)->withQueryString();
+
+        return view('docentes.index', compact('docentes'));
     }
 
     /**

@@ -22,6 +22,27 @@ class Calificacion extends Model
         'percentage',
     ];
 
+    /**
+     * Relación: Una calificación pertenece a un Alumno.
+     * ESTA ES LA FUNCIÓN QUE FALTABA
+     */
+    public function alumno()
+    {
+        return $this->belongsTo(Alumno::class);
+    }
+
+    /**
+     * Relación: Una calificación pertenece a un Curso.
+     * (Es buena práctica tenerla también)
+     */
+    public function curso()
+    {
+        return $this->belongsTo(Curso::class);
+    }
+
+    /**
+     * Relación: Una calificación tiene un Tipo de Actividad.
+     */
     public function tipoActividad()
     {
         return $this->belongsTo(TipoActividad::class);

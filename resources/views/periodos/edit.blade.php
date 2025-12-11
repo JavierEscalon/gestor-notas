@@ -1,50 +1,61 @@
 @extends('layouts.app')
 
 @section('content')
-
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h2">Editar Período: {{ $periodo->name }}</h1>
+    <a href="{{ route('periodos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
 </div>
 
-<div class="row">
-    <div class="col-lg-8">
-        <form action="{{ route('periodos.update', $periodo->id) }}" method="post">
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <form action="{{ route('periodos.update', $periodo->id) }}" method="POST">
             @csrf
             @method('PUT')
 
-            <div class="mb-3">
-                <label for="name" class="form-label">Nombre del Período</label>
-                <input type="text" class="form-control" id="name" name="name" 
-                       value="{{ old('name', $periodo->name) }}" required>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="start_date" class="form-label">Fecha de Inicio</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" 
-                           value="{{ old('start_date', $periodo->start_date) }}" required>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    <i class="bi bi-pencil-square"></i> Modificar Datos
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="end_date" class="form-label">Fecha de Fin</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" 
-                           value="{{ old('end_date', $periodo->end_date) }}" required>
+                <div class="card-body p-4">
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nombre del Período <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control form-control-lg" required value="{{ old('name', $periodo->name) }}">
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha de Inicio <span class="text-danger">*</span></label>
+                            <input type="date" name="start_date" class="form-control" required 
+                                    value="{{ old('start_date', \Carbon\Carbon::parse($periodo->start_date)->format('Y-m-d')) }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha de Fin <span class="text-danger">*</span></label>
+                            <input type="date" name="end_date" class="form-control" required 
+                                    value="{{ old('end_date', \Carbon\Carbon::parse($periodo->end_date)->format('Y-m-d')) }}">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                        <div>
+                            <strong>Nota:</strong> Si deseas cambiar cuál es el período activo, hazlo desde la lista de períodos creando uno nuevo o editando el estado directamente.
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $periodo->is_active) ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold" for="is_active">Período Vigente</label>
+                    </div>
+
+                </div>
+                <div class="card-footer bg-light border-0 py-3 text-end">
+                    <button type="submit" class="btn btn-warning btn-lg shadow-sm px-4">
+                        <i class="bi bi-check-lg"></i> Actualizar Período
+                    </button>
                 </div>
             </div>
-
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
-                       value="1" {{ old('is_active', $periodo->is_active) ? 'checked' : '' }}>
-                <label class="form-check-label" for="is_active">
-                    ¿Marcar como período activo?
-                </label>
-                <small class="d-block text-muted">El período activo es el que se usa por defecto para registrar notas.</small>
-            </div>
-
-            <hr class="my-4">
-
-            <button class="w-100 btn btn-warning btn-lg" type="submit">Actualizar Período</button>
         </form>
     </div>
 </div>
-
 @endsection

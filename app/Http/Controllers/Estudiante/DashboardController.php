@@ -20,7 +20,15 @@ class DashboardController extends Controller
         }
 
         // 2. Obtenemos los cursos inscritos con toda su info (materia, docente, etc.)
-        $cursos = $alumno->cursos()->with(['materia', 'docente', 'periodo', 'grado', 'seccion'])->get();
+        $cursos = $alumno->cursos()->with([
+            'materia',
+            'docente',
+            'periodo',
+            'grado',
+            'seccion',
+            'asistencias' => function($q) use ($alumno) {
+                $q->where('alumno_id', $alumno->id);
+        }])->get();
 
         // 3. Obtenemos TODAS las calificaciones de este alumno
         //    y las agrupamos por 'curso_id' para facilitar su uso en la vista

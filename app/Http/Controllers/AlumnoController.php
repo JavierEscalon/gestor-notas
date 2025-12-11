@@ -14,13 +14,35 @@ class AlumnoController extends Controller
     /**
      * muestra la lista de alumnos (read)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // buscamos todos los alumnos y traemos sus relaciones
-        $alumnos = Alumno::with('user', 'grado', 'seccion')->get();
+        // 1 preparamos la consulta base con las relaciones necesarias
+        // usamos 'user', 'grado' y 'seccion' para evitar problemas de carga
+        $query = Alumno::with(['grado', 'seccion', 'user']);
 
-        // pasamos la variable $alumnos a la vista
-        return view('alumnos.index', ['alumnos' => $alumnos]);
+        // 2. filtro por buscador (nombre, apellido o carnet)
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('student_id_code', 'like', "%{$search}%");
+            });
+        }
+
+        // 3 filtro por grado
+        if ($request->has('grado_id') && $request->grado_id != '') {
+            $query->where('grado_id', $request->grado_id);
+        }
+
+        // 4 ejecutamos la consulta con paginacion
+        $alumnos = $query->orderBy('last_name')->paginate(10)->withQueryString();
+        
+        // 5 IMPORTANTE: obtenemos la lista de grados para el filtro
+        $grados = \App\Models\Grado::all(); 
+
+        // 6 retornamos la vista pasando AMBAS variables: alumnos y grados
+        return view('alumnos.index', compact('alumnos', 'grados'));
     }
 
     /**
@@ -44,18 +66,30 @@ class AlumnoController extends Controller
      */
     public function store(Request $request)
     {
-        // validamos los datos del formulario
+        //1 validamos los datos del formulario
         $request->validate([
+            //datos del usuario
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'student_id_code' => 'required|string|max:255|unique:alumnos', // unico en la tabla alumnos
-            'grado_id' => 'required|exists:grados,id', // debe existir en la tabla grados
-            'seccion_id' => 'required|exists:seccions,id', // debe existir en la tabla secciones
-            'email' => 'required|string|email|max:255|unique:users', // unico en la tabla users
+            'email' => 'required|email|unique:users,emial',
             'password' => 'required|string|min:8',
+            
+            //datos academicos
+            'student_id_code' => 'required|unique:alumnos,strudent_id_code',
+            'grado_id' => 'required|exists:grados,id',
+            'seccion_id' => 'required|exists:seccions,id',
+
+            //datos personales (expediente)
+            'birth_date' => 'required|date',
+            'gender' => 'required|in:M,F',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'medical_conditions' => 'nullable|string|max:255',
         ]);
 
-        // creamos el registro en la tabla 'users'
+        //2 creamos el registro en la tabla 'users'
         $user = User::create([
             'name' => $request->first_name . ' ' . $request->last_name,
             'email' => $request->email,
@@ -63,8 +97,8 @@ class AlumnoController extends Controller
             'role' => 'estudiante', // asignamos el rol de estudiante
         ]);
 
-        // creamos el registro en la tabla 'alumnos'
-        //    y lo asociamos con el 'user_id' que acabamos de crear
+        //3. creamos el registro en la tabla 'alumnos'
+        // y lo asociamos con el 'user_id' que acabamos de crear
         Alumno::create([
             'user_id' => $user->id,
             'first_name' => $request->first_name,
@@ -72,11 +106,19 @@ class AlumnoController extends Controller
             'student_id_code' => $request->student_id_code,
             'grado_id' => $request->grado_id,
             'seccion_id' => $request->seccion_id,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'emergency_contact_name' => $request->emergency_contact_name,
+            'emergency_contact_phone' => $request->emergency_contact_phone,
+            'medical_conditions' => $request->medical_conditions,
+            'status' => 'activo',
         ]);
 
         // redirigimos al usuario a la lista de alumnos
         // con un mensaje de exito
-        return redirect()->route('alumnos.index')->with('success', '¡Alumno creado exitosamente!');
+        return redirect()->route('alumnos.index')->with('success', '¡Alumno matriculado exitosamente!');
     }
 
     /**
@@ -84,20 +126,11 @@ class AlumnoController extends Controller
      */
     public function edit(Alumno $alumno)
     {
-        // 'alumno $alumno' es gracias al route model binding de laravel
-        // laravel automaticamente busca al alumno por el id que
-        // pasamos en la url (ej. /alumnos/1/editar)
+        // Necesitamos los catálogos para llenar los selects
+        $grados = \App\Models\Grado::all();
+        $secciones = \App\Models\Seccion::all();
 
-        // al igual que en 'create', necesitamos la lista de grados y secciones
-        $grados = Grado::all();
-        $secciones = Seccion::all();
-
-        // retornamos la vista edit y le pasamos los 3 datos
-        return view('alumnos.edit', [
-            'alumno' => $alumno,
-            'grados' => $grados,
-            'secciones' => $secciones
-        ]);
+        return view('alumnos.edit', compact('alumno', 'grados', 'secciones'));
     }
 
     /**
@@ -109,39 +142,32 @@ class AlumnoController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            // regla 'unique' especial: debe ser unico,
-            // ignorando el id de este alumno
-            'student_id_code' => 'required|string|max:255|unique:alumnos,student_id_code,' . $alumno->id,
+            'email' => 'required|string|email|max:255|unique:users,email,' . $alumno->user->id, // ignorar propio email
+            
+            'student_id_code' => 'required|unique:alumnos,student_id_code,' . $alumno->id, // Ignorar propio carnet
             'grado_id' => 'required|exists:grados,id',
             'seccion_id' => 'required|exists:seccions,id',
-            // regla 'unique' para el email del usuario asociado
-            'email' => 'required|string|email|max:255|unique:users,email,' . $alumno->user->id,
-            'password' => 'nullable|string|min:8', // la clave es opcional
+
+            'birth_date' => 'required|date',
+            'gender' => 'required|in:M,F',
+            'status' => 'required|in:activo,inactivo,retirado', // solo en editar se puede cambiar estado
+            
         ]);
 
-        // actualizamos el registro 'user'
-        // buscamos al usuario que le pertenece al alumno
-        $user = $alumno->user;
-        $user->name = $request->first_name . ' ' . $request->last_name;
-        $user->email = $request->email;
-
-        // (solo actualizamos la clave si el campo 'password' no esta vacio)
+        // actualizar Usuario
+        $alumno->user->update([
+            'name' => $request->first_name . ' ' . $request->last_name,
+            'email' => $request->email,
+        ]);
+        
         if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+            $alumno->user->update(['password' => Hash::make($request->password)]);
         }
-        $user->save(); // (guardamos los cambios del usuario)
 
-        // actualizamos el registro 'alumno'
-        $alumno->update([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'student_id_code' => $request->student_id_code,
-            'grado_id' => $request->grado_id,
-            'seccion_id' => $request->seccion_id,
-        ]);
+        // Actualizar alumno (todos los campos)
+        $alumno->update($request->except(['email', 'password'])); // el resto va directo al modelo alumno
 
-        // redirigimos a la lista con un mensaje
-        return redirect()->route('alumnos.index')->with('success', '¡Alumno actualizado exitosamente!');
+        return redirect()->route('alumnos.index')->with('success', 'Expediente actualizado correctamente.');
     }
 
     /**

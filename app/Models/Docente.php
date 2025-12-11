@@ -27,4 +27,12 @@ class Docente extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Relación: Un Docente tiene muchos Cursos asignados.
+     */
+    public function cursos()
+    {
+        return $this->hasMany(Curso::class);
+    }
 }

@@ -10,10 +10,19 @@ class PeriodoEscolarController extends Controller
     /**
      * muestra la lista de periodos. (read)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $periodos = PeriodoEscolar::all();
-        return view('periodos.index', ['periodos' => $periodos]);
+        $query = PeriodoEscolar::query();
+
+        // Filtro por nombre del período
+        if ($request->has('search') && $request->search != '') {
+            $query->where('name', 'like', "%{$request->search}%");
+        }
+
+        // Ordenamos por fecha de inicio descendente (el más reciente primero)
+        $periodos = $query->orderBy('start_date', 'desc')->paginate(10)->withQueryString();
+
+        return view('periodos.index', compact('periodos'));
     }
 
     /**

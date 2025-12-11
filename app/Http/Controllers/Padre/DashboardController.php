@@ -19,7 +19,13 @@ class DashboardController extends Controller
 
         // 2 obtenemos a sus hijos con toda su informacion academica
         // Cursos, Materias, Docentes, Periodos
-        $hijos = $padre->alumnos()->with(['cursos.materia', 'cursos.docente', 'cursos.periodo', 'grado', 'seccion'])->get();
+        $hijos = $padre->alumnos()->with([
+            'cursos.materia',
+            'cursos.docente',
+            'cursos.periodo',
+            'cursos.asistencias',
+            'grado',
+            'seccion'])->get();
 
         // 3 preparamos las calificaciones para cada hijo
         // estructura: $notasPorHijo[id_hijo][id_curso] = Coleccion de notas
@@ -27,9 +33,9 @@ class DashboardController extends Controller
 
         foreach ($hijos as $hijo) {
             $calificaciones = Calificacion::where('alumno_id', $hijo->id)
-                                          ->with('tipoActividad')
-                                          ->get()
-                                          ->groupBy('curso_id');
+                                            ->with('tipoActividad')
+                                            ->get()
+                                            ->groupBy('curso_id');
 
             $notasPorHijo[$hijo->id] = $calificaciones;
         }

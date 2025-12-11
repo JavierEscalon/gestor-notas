@@ -20,6 +20,14 @@ class Alumno extends Model
         'first_name',
         'last_name',
         'student_id_code',
+        'birth_date',
+        'gender',
+        'address',
+        'phone',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'medical_conditions',
+        'status',
     ];
 
     /**
